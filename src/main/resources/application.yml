@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: auth-starter-kit
+
+  # --- Base (común a todos los perfiles) ---
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# JWT
+jwt:
+  access-secret: ${JWT_ACCESS_SECRET:dev-access-secret-change-me-32chars!!}
+  refresh-secret: ${JWT_REFRESH_SECRET:dev-refresh-secret-change-me-32chars!}
+  totp-challenge-secret: ${JWT_TOTP_CHALLENGE_SECRET:dev-totp-chal-secret-change-me-32ch}
+  access-expires-in: ${JWT_ACCESS_EXPIRES_IN:900}          # segundos — 15 min
+  refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800}     # 7 días
+  totp-challenge-expires-in: ${JWT_TOTP_EXPIRES_IN:300}    # 5 min
+
+# TOTP
+totp:
+  issuer: ${TOTP_ISSUER:Auth Starter Kit}
+
+# CORS
+cors:
+  allowed-origins: ${CORS_ORIGIN:http://localhost:4200}
+
+# Springdoc / Swagger UI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  info:
+    title: Auth Starter Kit API
+    version: 1.0.0
+    description: >
+      JWT + TOTP 2FA Authentication API.
+      Rutas públicas no necesitan token.
+      Rutas protegidas requieren el header: Authorization: Bearer <access_token>
+
+---
+# ===================== PERFIL: dev (H2 en memoria, equivalente al SQLite original) =====================
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:h2:mem:authkit;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+
+  flyway:
+    url: jdbc:h2:mem:authkit;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    user: sa
+    password: ""
+
+---
+# ===================== PERFIL: prod (PostgreSQL) =====================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/auth_starter_kit}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: auth_starter_kit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://db:5432/auth_starter_kit
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: change-me-access-secret-32-chars!!!
+      JWT_REFRESH_SECRET: change-me-refresh-secret-32-chars!!
+      JWT_TOTP_CHALLENGE_SECRET: change-me-totp-challenge-32-chars!
+      CORS_ORIGIN: http://localhost:4200
+      TOTP_ISSUER: "Auth Starter Kit"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
